@@ -22,6 +22,7 @@ After that you have to create your database table. We need the following structu
 CREATE TABLE myLog
   (
     id         BIGINT        NOT NULL
+                             IDENTITY(1,1)
                              PRIMARY KEY,
     channel    NVARCHAR(255) NOT NULL,
     level      INT           NOT NULL,

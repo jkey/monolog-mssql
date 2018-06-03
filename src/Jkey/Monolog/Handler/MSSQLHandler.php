@@ -103,7 +103,6 @@ class MSSQLHandler extends AbstractProcessingHandler
             $columns .= ", [$f]";
             $fields .= ", :$f";
         }
-        echo 'INSERT INTO [' . $this->table . '] (' . $columns . ') VALUES (' . $fields . ')';
         $this->statement = $this->pdo->prepare(
             'INSERT INTO [' . $this->table . '] (' . $columns . ') VALUES (' . $fields . ')'
         );
