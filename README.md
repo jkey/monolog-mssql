@@ -1,44 +1,66 @@
-monolog-mysql
+monolog-mssql
 =============
 
-MySQL Handler for Monolog, which allows to store log messages in a MySQL Table.
-It can log text messages to a specific table, and creates the table automatically if it does not exist.
-The class further allows to dynamically add extra attributes, which are stored in a separate database field, and can be used for later analyzing and sorting.
+Microsoft SQL Server Handler for Monolog, which allows to store log messages in a MSSQL Table.
+It can log text messages to a specific table.
+The class further allows to use extra attributes as database field, which are can be used for later analyzing and sorting.
 
-Homepage: http://www.d-herrmann.de/projects/monolog-mysql-handler/
+This is a fork from [waza-ari/monolog-mysql](https://github.com/waza-ari/monolog-mysql), with some changes.
+The table and columns are not created or removed automatically.
 
 # Installation
-monolog-mysql is available via composer. Just add the following line to your required section in composer.json and do a `php composer.phar update`.
+monolog-mssql is available via composer. Just add the following line to your required section in composer.json and 
+do a `php composer.phar update`.
 
 ```
-"wazaari/monolog-mysql": ">1.0.0"
+"jkey/monolog-mysql": ">1.0.0"
+```
+
+After that you have to create your database table. We need the following structure, which you are free to extend.
+
+```tsql
+CREATE TABLE myLog
+  (
+    id         BIGINT        NOT NULL
+                             PRIMARY KEY,
+    channel    NVARCHAR(255) NOT NULL,
+    level      INT           NOT NULL,
+    message    NTEXT         NOT NULL,
+    time       INT           NOT NULL
+  );
 ```
 
 # Usage
-Just use it as any other Monolog Handler, push it to the stack of your Monolog Logger instance. The Handler however needs some parameters:
+Just use it as any other Monolog Handler, push it to the stack of your Monolog Logger instance. 
+The Handler however needs some parameters:
 
-- **$pdo** PDO Instance of your database. Pass along the PDO instantiation of your database connection with your database selected.
+- **$pdo** PDO Instance of your database. Pass along the PDO instantiation of your database connection with 
+your database selected.
 - **$table** The table name where the logs should be stored
-- **$additionalFields** simple array of additional database fields, which should be stored in the database. The columns are created automatically, and the fields can later be used in the extra context section of a record. See examples below. _Defaults to an empty array()_
-- **$level** can be any of the standard Monolog logging levels. Use Monologs statically defined contexts. _Defaults to Logger::DEBUG_
-- **$bubble** _Defaults to true_
+- **$additionalFields** simple array of additional database fields, which should be stored in the database. 
+The fields can later be used in the extra context section of a record. See examples below. _Defaults to an empty array()
+- **$level** can be any of the standard Monolog logging levels. Use Monologs statically defined contexts. _
+Defaults to Logger::DEBUG_
+- **$bubble** _Defaults to true
 
 # Examples
 Given that $pdo is your database instance, you could use the class as follows:
 
 ```php
+<?php
+require __DIR__ . '/../vendor/autoload.php';
 //Import class
-use MySQLHandler\MySQLHandler;
+use Monolog\Logger;
+use Jkey\Monolog\Handler\MSSQLHandler;
 
-//Create MysqlHandler
-$mySQLHandler = new MySQLHandler($pdo, "log", array('username', 'userid'), \Monolog\Logger::DEBUG);
+$pdo = new PDO('sqlsrv:Server=localhost;Database=log', 'myuser', 'mypass');
 
 //Create logger
-$logger = new \Monolog\Logger($context);
-$logger->pushHandler($mySQLHandler);
+$log = new Logger('name');
+$log->pushHandler(new MSSQLHandler($pdo, "log", array('username', 'userid'), \Monolog\Logger::DEBUG));
 
 //Now you can use the logger, and further attach additional information
-$logger->addWarning("This is a great message, woohoo!", array('username'  => 'John Doe', 'userid'  => 245));
+$log->addWarning("This is a great message, woohoo!", array('username'  => 'John Doe', 'userid'  => 245));
 ```
 
 # License

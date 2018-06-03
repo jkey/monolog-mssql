@@ -1,20 +1,22 @@
 {
-    "name": "wazaari/monolog-mysql",
-    "description": "A handler for Monolog that sends messages to MySQL",
-    "keywords": ["log", "logging", "monolog", "mysql", "database"],
-    "homepage": "https://github.com/waza-ari/monolog-mysql",
+    "name": "jkey/monolog-mssql",
+    "description": "A handler for Monolog that sends messages to MSSQL",
+    "keywords": ["log", "logging", "monolog", "sqlsrv", "database", "mssql"],
+    "homepage": "https://github.com/jkey/monolog-mssql",
     "license": "MIT",
     "authors": [
         {
-            "name": "Daniel Herrmann",
-            "email": "daniel.herrmann1@gmail.com"
+            "name": "Kurt Seiler",
+            "email": "kseiler90@gmail.com"
         }
     ],
     "require": {
         "monolog/monolog": ">1.4.0",
-        "ext-pdo_mysql": "*"
+        "ext-pdo_sqlsrv": "*"
     },
     "autoload": {
-        "psr-4": {"MySQLHandler\\": "src/MySQLHandler"}
+        "psr-4": {
+            "Jkey\\Monolog\\": "src/Jkey/Monolog"
+        }
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace MySQLHandler;
+namespace Jkey\Monolog\Handler;
 
 use Monolog\Logger;
 use Monolog\Handler\AbstractProcessingHandler;
@@ -9,19 +9,14 @@ use PDOStatement;
 
 /**
  * This class is a handler for Monolog, which can be used
- * to write records in a MySQL table
+ * to write records in a MSSQL table
  *
- * Class MySQLHandler
- * @package wazaari\MysqlHandler
+ * Class MSSQLHandler
+ * @package jkey\monolog-mssql
+ * @license https://github.com/jkey/monolog-mssql/blob/master/LICENSE MIT
  */
-class MySQLHandler extends AbstractProcessingHandler
+class MSSQLHandler extends AbstractProcessingHandler
 {
-
-    /**
-     * @var bool defines whether the MySQL connection is been initialized
-     */
-    private $initialized = false;
-
     /**
      * @var PDO pdo object of database connection
      */
@@ -78,53 +73,13 @@ class MySQLHandler extends AbstractProcessingHandler
         }
         $this->table = $table;
         $this->additionalFields = $additionalFields;
-        parent::__construct($level, $bubble);
-    }
-
-    /**
-     * Initializes this handler by creating the table if it not exists
-     */
-    private function initialize()
-    {
-        $this->pdo->exec(
-            'CREATE TABLE IF NOT EXISTS `'.$this->table.'` '
-            .'(id BIGINT(20) NOT NULL AUTO_INCREMENT PRIMARY KEY, channel VARCHAR(255), level INTEGER, message LONGTEXT, time INTEGER UNSIGNED, INDEX(channel) USING HASH, INDEX(level) USING HASH, INDEX(time) USING BTREE)'
-        );
-
-        //Read out actual columns
-        $actualFields = array();
-        $rs = $this->pdo->query('SELECT * FROM `'.$this->table.'` LIMIT 0');
-        for ($i = 0; $i < $rs->columnCount(); $i++) {
-            $col = $rs->getColumnMeta($i);
-            $actualFields[] = $col['name'];
-        }
-
-        //Calculate changed entries
-        $removedColumns = array_diff(
-            $actualFields,
-            $this->additionalFields,
-            $this->defaultfields
-        );
-        $addedColumns = array_diff($this->additionalFields, $actualFields);
-
-        //Remove columns
-        if (!empty($removedColumns)) {
-            foreach ($removedColumns as $c) {
-                $this->pdo->exec('ALTER TABLE `'.$this->table.'` DROP `'.$c.'`;');
-            }
-        }
-
-        //Add columns
-        if (!empty($addedColumns)) {
-            foreach ($addedColumns as $c) {
-                $this->pdo->exec('ALTER TABLE `'.$this->table.'` add `'.$c.'` TEXT NULL DEFAULT NULL;');
-            }
-        }
 
         // merge default and additional field to one array
-        $this->defaultfields = array_merge($this->defaultfields, $this->additionalFields);
+        $this->fields = array_merge($this->defaultfields, $this->additionalFields);
 
-        $this->initialized = true;
+        $this->prepareStatement();
+
+        parent::__construct($level, $bubble);
     }
 
     /**
@@ -140,17 +95,17 @@ class MySQLHandler extends AbstractProcessingHandler
                 continue;
             }
             if ($key == 1) {
-                $columns .= "$f";
+                $columns .= "[$f]";
                 $fields .= ":$f";
                 continue;
             }
 
-            $columns .= ", $f";
+            $columns .= ", [$f]";
             $fields .= ", :$f";
         }
-
+        echo 'INSERT INTO [' . $this->table . '] (' . $columns . ') VALUES (' . $fields . ')';
         $this->statement = $this->pdo->prepare(
-            'INSERT INTO `' . $this->table . '` (' . $columns . ') VALUES (' . $fields . ')'
+            'INSERT INTO [' . $this->table . '] (' . $columns . ') VALUES (' . $fields . ')'
         );
     }
 
@@ -163,15 +118,6 @@ class MySQLHandler extends AbstractProcessingHandler
      */
     protected function write(array $record)
     {
-        if (!$this->initialized) {
-            $this->initialize();
-        }
-
-        /**
-         * reset $fields with default values
-         */
-        $this->fields = $this->defaultfields;
-
         /*
          * merge $record['context'] and $record['extra'] as additional info of Processors
          * getting added to $record['extra']
@@ -202,8 +148,6 @@ class MySQLHandler extends AbstractProcessingHandler
                 unset($this->fields[array_search($key, $this->fields)]);
             }
         }
-
-        $this->prepareStatement();
 
         //Fill content array with "null" values if not provided
         $contentArray = $contentArray + array_combine(
