@@ -13,7 +13,7 @@ monolog-mssql is available via composer. Just add the following line to your req
 do a `php composer.phar update`.
 
 ```
-"jkey/monolog-mysql": ">1.0.0"
+"jkey/monolog-mssql": ">1.0.0"
 ```
 
 After that you have to create your database table. We need the following structure, which you are free to extend.
